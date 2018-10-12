@@ -16275,16 +16275,21 @@ cpphs
 testHaskellDepends = [
 base
 cardano-sl-binary
+cardano-sl-chain
 cardano-sl-chain-test
 cardano-sl-core
 cardano-sl-core-test
+cardano-sl-crypto
 cardano-sl-util
 cardano-sl-util-test
+data-default
 filepath
 hedgehog
 lens
+mtl
 temporary
 universum
+unordered-containers
 ];
 doHaddock = false;
 description = "Cardano SL - basic DB interfaces";
