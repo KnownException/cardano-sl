@@ -37,6 +37,7 @@ import           Pos.Chain.Block (Blund)
 import           Pos.Chain.Txp (Tx, TxId, Utxo)
 import           Pos.Chain.Update (ConfirmedProposalState, SoftwareVersion)
 import           Pos.Core (Coin, Timestamp)
+import qualified Pos.Core as Core (Address)
 import           Pos.Core.Chrono (NE, NewestFirst (..), OldestFirst (..))
 import           Pos.Crypto (EncryptedSecretKey, PassPhrase)
 
@@ -527,6 +528,7 @@ data NewPaymentError =
     | NewPaymentTimeLimitReached TimeExecutionLimit
     | NewPaymentWalletIdDecodingFailed Text
     | NewPaymentUnknownAccountId Kernel.UnknownHdAccount
+    | NewPaymentAddressBadNetworkMagic Core.Address
 
 -- | Unsound show instance needed for the 'Exception' instance.
 instance Show NewPaymentError where
@@ -543,6 +545,8 @@ instance Buildable NewPaymentError where
         bprint ("NewPaymentWalletIdDecodingFailed " % build) txt
     build (NewPaymentUnknownAccountId err) =
         bprint ("NewPaymentUnknownAccountId " % build) err
+    build (NewPaymentAddressBadNetworkMagic addr) =
+        bprint ("NewPaymentAddressBadNetworkMagic " % build) addr
 
 
 data EstimateFeesError =
