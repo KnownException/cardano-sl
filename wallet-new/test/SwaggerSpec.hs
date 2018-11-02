@@ -31,7 +31,7 @@ import           Pos.Util.CompileInfo (CompileTimeInfo (CompileTimeInfo),
 import           Data.Aeson (ToJSON)
 import           Servant.Swagger.Internal.Test (props)
 import           Servant.Swagger.Internal.TypeLevel (BodyTypes, Every, TMap)
-import           Test.QuickCheck (Arbitrary)
+import           Test.QuickCheck (property, Arbitrary)
 
 -- Syntethic instances and orphans to be able to use `validateEveryToJSON`.
 -- In the future, hopefully, we will never need these.
@@ -81,5 +81,5 @@ validateEveryToJSON'
     -> Spec
 validateEveryToJSON' _ = props
   (Proxy :: Proxy [ToJSON, ToSchema])
-  (null . validateToJSON)
+  (property . null . validateToJSON)
   (Proxy :: Proxy (BodyTypes ValidJSON api))
