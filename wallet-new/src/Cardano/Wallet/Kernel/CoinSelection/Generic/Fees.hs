@@ -88,22 +88,40 @@ senderPaysFee :: (Monad m, CoinSelDom (Dom utxo))
                    ([CoinSelResult (Dom utxo)], SelectedUtxo (Dom utxo))
 senderPaysFee pickUtxo totalFee css = do
     let (css', remainingFee) = feeFromChange totalFee css
-    (css', ) <$> coverRemainingFee pickUtxo remainingFee
+    (additionalUtxo, additionalChange) <- coverRemainingFee pickUtxo remainingFee
+    let css'' = returnAdditioncalChange css' additionalChange
+    return (css'', additionalUtxo)
 
 coverRemainingFee :: forall utxo m. (Monad m, CoinSelDom (Dom utxo))
                   => (Value (Dom utxo) -> CoinSelT utxo CoinSelHardErr m (Maybe (UtxoEntry (Dom utxo))))
                   -> Fee (Dom utxo)
-                  -> CoinSelT utxo CoinSelHardErr m (SelectedUtxo (Dom utxo))
+                  -> CoinSelT utxo CoinSelHardErr m (SelectedUtxo (Dom utxo), Value (Dom utxo))
 coverRemainingFee pickUtxo fee = go emptySelection
   where
     go :: SelectedUtxo (Dom utxo)
-       -> CoinSelT utxo CoinSelHardErr m (SelectedUtxo (Dom utxo))
+       -> CoinSelT utxo CoinSelHardErr m (SelectedUtxo (Dom utxo), Value (Dom utxo))
     go !acc
-      | selectedBalance acc >= getFee fee = return acc
+      | selectedBalance acc >= getFee fee =
+          return (acc, unsafeValueSub (selectedBalance acc) (getFee fee))
       | otherwise = do
           mio <- (pickUtxo $ unsafeValueSub (getFee fee) (selectedBalance acc))
           io  <- maybe (throwError CoinSelHardErrCannotCoverFee) return mio
           go (select io acc)
+
+-- | This function adds some additional changes to the first change of the first
+--   result.
+returnAdditioncalChange :: forall utxo. (CoinSelDom utxo)
+                        => [CoinSelResult utxo]
+                        -> Value utxo
+                        -> [CoinSelResult utxo]
+returnAdditioncalChange [] _ = error "found empty CoinSelResult"
+returnAdditioncalChange (cs : restcs) additionalChange =
+  let changes' = case coinSelChange cs of
+          []                  -> [additionalChange]
+          change : restchange ->
+              unsafeValueAdd change additionalChange : restchange
+  in cs {coinSelChange = changes'} : restcs
+
 
 -- | Attempt to pay the fee from change outputs, returning any fee remaining
 --
